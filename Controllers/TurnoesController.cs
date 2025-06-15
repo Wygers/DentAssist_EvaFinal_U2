@@ -62,10 +62,11 @@ namespace DentAssist.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,FechaHora,DuracionMinutos,Estado,PacienteId,OdontologoId")] Turno turno)
         {
+            // ***** ESTA ES LA CLAVE: Si ModelState.IsValid es false, el modelo tiene errores de validación. *****
             if (ModelState.IsValid)
             {
                 _context.Add(turno);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(); // <-- Aquí es donde los datos se guardan en la DB (mediante INSERT INTO)
                 return RedirectToAction(nameof(Index));
             }
             // Repobla ViewData si el modelo no es válido para que el usuario pueda corregir los errores
@@ -73,7 +74,7 @@ namespace DentAssist.Controllers
             ViewData["PacienteId"] = new SelectList(_context.Pacientes, "Id", "Nombre", turno.PacienteId);
             // Si usaras una lista de estados, repóblala aquí también:
             // ViewData["Estados"] = new SelectList(new List<string> { "Pendiente", "Confirmado", "Cancelado", "Finalizado" }, turno.Estado);
-            return View(turno);
+            return View(turno); // Vuelve a la vista 'Create' mostrando los errores
         }
 
         // GET: Turnoes/Edit/5
@@ -112,7 +113,7 @@ namespace DentAssist.Controllers
                 try
                 {
                     _context.Update(turno);
-                    await _context.SaveChangesAsync();
+                    await _context.SaveChangesAsync(); // <-- Aquí es donde los datos se guardan en la DB (mediante UPDATE)
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -132,7 +133,7 @@ namespace DentAssist.Controllers
             ViewData["PacienteId"] = new SelectList(_context.Pacientes, "Id", "Nombre", turno.PacienteId);
             // Si usaras una lista de estados, repóblala aquí también:
             // ViewData["Estados"] = new SelectList(new List<string> { "Pendiente", "Confirmado", "Cancelado", "Finalizado" }, turno.Estado);
-            return View(turno);
+            return View(turno); // Vuelve a la vista 'Edit' mostrando los errores
         }
 
         // GET: Turnoes/Delete/5
@@ -166,7 +167,7 @@ namespace DentAssist.Controllers
                 _context.Turnos.Remove(turno);
             }
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(); // <-- Aquí es donde los datos se eliminan de la DB (mediante DELETE)
             return RedirectToAction(nameof(Index));
         }
 
