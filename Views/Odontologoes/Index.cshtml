@@ -1,0 +1,60 @@
+﻿@model IEnumerable<DentAssist.Models.Odontologo>
+
+@{
+    ViewData["Title"] = "Odontólogos";
+}
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="text-primary"><i class="bi bi-person-badge"></i> Listado de Odontólogos</h5>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+        <a class="btn btn-success" asp-action="Create">
+            <i class="bi bi-plus-circle"></i> Nuevo Odontólogo
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-warning text-center" role="alert">
+            <i class="bi bi-info-circle"></i> No hay odontólogos registrados aún.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>@Html.DisplayNameFor(model => model.First().Nombre)</th>
+                        <th>@Html.DisplayNameFor(model => model.First().Matricula)</th>
+                        <th>@Html.DisplayNameFor(model => model.First().Especialidad)</th>
+                        <th>@Html.DisplayNameFor(model => model.First().Email)</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@Html.DisplayFor(modelItem => item.Nombre)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Matricula)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Especialidad)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Email)</td>
+                            <td class="text-center">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning me-1">
+                                    <i class="bi bi-pencil-square"></i> Editar
+                                </a>
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info me-1">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro que desea eliminar este odontólogo?');">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
