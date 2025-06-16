@@ -47,10 +47,10 @@
                             <td>@item.DuracionMinutos minutos</td>
                             <td>
                                 <span class="badge
-                                            @(item.Estado == "Pendiente" ? "bg-warning text-dark" :
-                                                                            item.Estado == "Confirmado" ? "bg-info" :
-                                                                            item.Estado == "Finalizado" ? "bg-success" :
-                                                                            item.Estado == "Cancelado" ? "bg-danger" : "bg-secondary")">
+                                                    @(item.Estado == "Pendiente" ? "bg-warning text-dark" :
+                                                                                                                  item.Estado == "Confirmado" ? "bg-info" :
+                                                                                                                  item.Estado == "Finalizado" ? "bg-success" :
+                                                                                                                  item.Estado == "Cancelado" ? "bg-danger" : "bg-secondary")">
                             @item.Estado
                         </span>
                     </td>
