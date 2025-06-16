@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using DentAssist.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using DentAssist.Models;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace DentAssist.Controllers
 {
@@ -18,30 +17,44 @@ namespace DentAssist.Controllers
             _context = context;
         }
 
+        // Método privado para cargar los SelectList de Odontologos, Pacientes y Estados
+        private void CargarListas(Turno turno = null)
+        {
+            ViewData["OdontologoId"] = new SelectList(_context.Odontologos, "Id", "Nombre", turno?.OdontologoId);
+            ViewData["PacienteId"] = new SelectList(_context.Pacientes, "Id", "Nombre", turno?.PacienteId);
+
+            var estados = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "Pendiente", Text = "Pendiente" },
+                new SelectListItem { Value = "Confirmado", Text = "Confirmado" },
+                new SelectListItem { Value = "Realizado", Text = "Realizado" },
+                new SelectListItem { Value = "Cancelado", Text = "Cancelado" }
+            };
+            ViewData["Estado"] = new SelectList(estados, "Value", "Text", turno?.Estado);
+        }
+
         // GET: Turnoes
         public async Task<IActionResult> Index()
         {
-            // Incluye Paciente y Odontologo para mostrar sus nombres/datos en la vista si es necesario
-            var applicationDbContext = _context.Turnos.Include(t => t.Odontologo).Include(t => t.Paciente);
-            return View(await applicationDbContext.ToListAsync());
+            var turnos = await _context.Turnos
+                .Include(t => t.Paciente)
+                .Include(t => t.Odontologo)
+                .ToListAsync();
+
+            return View(turnos);
         }
 
         // GET: Turnoes/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var turno = await _context.Turnos
-                .Include(t => t.Odontologo)
                 .Include(t => t.Paciente)
+                .Include(t => t.Odontologo)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (turno == null)
-            {
-                return NotFound();
-            }
+
+            if (turno == null) return NotFound();
 
             return View(turno);
         }
@@ -49,11 +62,7 @@ namespace DentAssist.Controllers
         // GET: Turnoes/Create
         public IActionResult Create()
         {
-            // Puedes poblar una lista de estados aquí si quieres un DropDownList en lugar de un input de texto
-            // Ejemplo: ViewData["Estados"] = new SelectList(new List<string> { "Pendiente", "Confirmado", "Cancelado", "Finalizado" });
-
-            ViewData["OdontologoId"] = new SelectList(_context.Odontologos, "Id", "Especialidad"); // Asumo que "Especialidad" es un buen texto a mostrar
-            ViewData["PacienteId"] = new SelectList(_context.Pacientes, "Id", "Nombre"); // Asumo que "Nombre" es un buen texto a mostrar
+            CargarListas();
             return View();
         }
 
@@ -62,39 +71,59 @@ namespace DentAssist.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,FechaHora,DuracionMinutos,Estado,PacienteId,OdontologoId")] Turno turno)
         {
-            // ***** ESTA ES LA CLAVE: Si ModelState.IsValid es false, el modelo tiene errores de validación. *****
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(turno);
-                await _context.SaveChangesAsync(); // <-- Aquí es donde los datos se guardan en la DB (mediante INSERT INTO)
-                return RedirectToAction(nameof(Index));
+                CargarListas(turno);
+                return View(turno);
             }
-            // Repobla ViewData si el modelo no es válido para que el usuario pueda corregir los errores
-            ViewData["OdontologoId"] = new SelectList(_context.Odontologos, "Id", "Especialidad", turno.OdontologoId);
-            ViewData["PacienteId"] = new SelectList(_context.Pacientes, "Id", "Nombre", turno.PacienteId);
-            // Si usaras una lista de estados, repóblala aquí también:
-            // ViewData["Estados"] = new SelectList(new List<string> { "Pendiente", "Confirmado", "Cancelado", "Finalizado" }, turno.Estado);
-            return View(turno); // Vuelve a la vista 'Create' mostrando los errores
+
+            // Validar que el estado sea uno válido
+            var estadosValidos = new[] { "Pendiente", "Confirmado", "Realizado", "Cancelado" };
+            if (!estadosValidos.Contains(turno.Estado))
+            {
+                ModelState.AddModelError("Estado", "Estado inválido.");
+                CargarListas(turno);
+                return View(turno);
+            }
+
+            var finTurnoNuevo = turno.FechaHora.AddMinutes(turno.DuracionMinutos);
+
+            bool conflictoOdontologo = _context.Turnos.Any(t =>
+                t.OdontologoId == turno.OdontologoId &&
+                t.FechaHora < finTurnoNuevo &&
+                t.FechaHora.AddMinutes(t.DuracionMinutos) > turno.FechaHora);
+
+            bool conflictoPaciente = _context.Turnos.Any(t =>
+                t.PacienteId == turno.PacienteId &&
+                t.FechaHora < finTurnoNuevo &&
+                t.FechaHora.AddMinutes(t.DuracionMinutos) > turno.FechaHora);
+
+            if (conflictoOdontologo)
+                ModelState.AddModelError("", "El odontólogo ya tiene un turno en ese horario.");
+
+            if (conflictoPaciente)
+                ModelState.AddModelError("", "El paciente ya tiene un turno en ese horario.");
+
+            if (!ModelState.IsValid)
+            {
+                CargarListas(turno);
+                return View(turno);
+            }
+
+            _context.Add(turno);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Turnoes/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var turno = await _context.Turnos.FindAsync(id);
-            if (turno == null)
-            {
-                return NotFound();
-            }
-            // Repobla ViewData para la edición
-            ViewData["OdontologoId"] = new SelectList(_context.Odontologos, "Id", "Especialidad", turno.OdontologoId);
-            ViewData["PacienteId"] = new SelectList(_context.Pacientes, "Id", "Nombre", turno.PacienteId);
-            // Si usaras una lista de estados, repóblala aquí también:
-            // ViewData["Estados"] = new SelectList(new List<string> { "Pendiente", "Confirmado", "Cancelado", "Finalizado" }, turno.Estado);
+            if (turno == null) return NotFound();
+
+            CargarListas(turno);
             return View(turno);
         }
 
@@ -103,55 +132,50 @@ namespace DentAssist.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,FechaHora,DuracionMinutos,Estado,PacienteId,OdontologoId")] Turno turno)
         {
-            if (id != turno.Id)
+            if (id != turno.Id) return NotFound();
+
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                CargarListas(turno);
+                return View(turno);
             }
 
-            if (ModelState.IsValid)
+            // Validar que el estado sea uno válido
+            var estadosValidos = new[] { "Pendiente", "Confirmado", "Realizado", "Cancelado" };
+            if (!estadosValidos.Contains(turno.Estado))
             {
-                try
-                {
-                    _context.Update(turno);
-                    await _context.SaveChangesAsync(); // <-- Aquí es donde los datos se guardan en la DB (mediante UPDATE)
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!TurnoExists(turno.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("Estado", "Estado inválido.");
+                CargarListas(turno);
+                return View(turno);
             }
-            // Repobla ViewData si el modelo no es válido
-            ViewData["OdontologoId"] = new SelectList(_context.Odontologos, "Id", "Especialidad", turno.OdontologoId);
-            ViewData["PacienteId"] = new SelectList(_context.Pacientes, "Id", "Nombre", turno.PacienteId);
-            // Si usaras una lista de estados, repóblala aquí también:
-            // ViewData["Estados"] = new SelectList(new List<string> { "Pendiente", "Confirmado", "Cancelado", "Finalizado" }, turno.Estado);
-            return View(turno); // Vuelve a la vista 'Edit' mostrando los errores
+
+            try
+            {
+                _context.Update(turno);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!_context.Turnos.Any(e => e.Id == turno.Id))
+                    return NotFound();
+                else
+                    throw;
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Turnoes/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var turno = await _context.Turnos
-                .Include(t => t.Odontologo)
                 .Include(t => t.Paciente)
+                .Include(t => t.Odontologo)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (turno == null)
-            {
-                return NotFound();
-            }
+
+            if (turno == null) return NotFound();
 
             return View(turno);
         }
@@ -163,17 +187,10 @@ namespace DentAssist.Controllers
         {
             var turno = await _context.Turnos.FindAsync(id);
             if (turno != null)
-            {
                 _context.Turnos.Remove(turno);
-            }
 
-            await _context.SaveChangesAsync(); // <-- Aquí es donde los datos se eliminan de la DB (mediante DELETE)
+            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool TurnoExists(int id)
-        {
-            return _context.Turnos.Any(e => e.Id == id);
         }
     }
 }

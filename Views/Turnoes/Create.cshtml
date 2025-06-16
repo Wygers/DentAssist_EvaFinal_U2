@@ -1,63 +1,57 @@
 ﻿@model DentAssist.Models.Turno
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Crear Turno";
 }
-<h5>Create</h5>
 
-<h5>Turno</h5>
+<h5>@ViewData["Title"]</h5>
 <hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-            <div class="form-group">
-                <label asp-for="FechaHora" class="control-label"></label>
-                <input asp-for="FechaHora" class="form-control" />
+<div class="row">
+    <div class="col-md-5">
+        <form asp-action="Create" method="post" novalidate>
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="FechaHora" class="form-label"></label>
+                <input asp-for="FechaHora" class="form-control" type="datetime-local" />
                 <span asp-validation-for="FechaHora" class="text-danger"></span>
             </div>
 
-            <div class="form-group">
-                <label asp-for="DuracionMinutos" class="control-label"></label>
-                <input asp-for="DuracionMinutos" class="form-control" />
+            <div class="mb-3">
+                <label asp-for="DuracionMinutos" class="form-label"></label>
+                <input asp-for="DuracionMinutos" class="form-control" type="number" min="1" max="480" />
                 <span asp-validation-for="DuracionMinutos" class="text-danger"></span>
             </div>
-
-            <div class="form-group">
-                <label asp-for="Estado" class="control-label"></label>
+            <div class="mb-3">
+                <label asp-for="Estado" class="form-label"></label>
                 <input asp-for="Estado" class="form-control" />
-                @* Si quieres un DropDownList para Estado, usa esto en su lugar:
-                <select asp-for="Estado" class="form-control" asp-items="ViewBag.Estados"></select>
-                *@
                 <span asp-validation-for="Estado" class="text-danger"></span>
             </div>
-
-            <div class="form-group">
-                <label asp-for="PacienteId" class="control-label"></label>
-                <select asp-for="PacienteId" class="form-control" asp-items="ViewBag.PacienteId"></select>
+            <div class="mb-3">
+                <label asp-for="PacienteId" class="form-label"></label>
+                <select asp-for="PacienteId" class="form-select" asp-items="ViewBag.PacienteId">
+                    <option value="">-- Seleccione Paciente --</option>
+                </select>
                 <span asp-validation-for="PacienteId" class="text-danger"></span>
             </div>
 
-            <div class="form-group">
-                <label asp-for="OdontologoId" class="control-label"></label>
-                <select asp-for="OdontologoId" class="form-control" asp-items="ViewBag.OdontologoId"></select>
+            <div class="mb-3">
+                <label asp-for="OdontologoId" class="form-label"></label>
+                <select asp-for="OdontologoId" class="form-select" asp-items="ViewBag.OdontologoId">
+                    <option value="">-- Seleccione Odontólogo --</option>
+                </select>
                 <span asp-validation-for="OdontologoId" class="text-danger"></span>
             </div>
 
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Crear Turno</button>
+                <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
             </div>
         </form>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

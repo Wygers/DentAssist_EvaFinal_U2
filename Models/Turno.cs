@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DentAssist.Models
 {
@@ -8,25 +7,23 @@ namespace DentAssist.Models
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "La fecha y hora son requeridas.")]
+        [Required(ErrorMessage = "La fecha y hora son obligatorias")]
         public DateTime FechaHora { get; set; }
 
-        [Required(ErrorMessage = "La duración en minutos es requerida.")]
-        [Range(1, 480, ErrorMessage = "La duración debe estar entre 1 y 480 minutos.")]
+        [Required(ErrorMessage = "La duración es obligatoria")]
+        [Range(1, 240, ErrorMessage = "La duración debe ser entre 1 y 240 minutos")]
         public int DuracionMinutos { get; set; }
 
-        [Required(ErrorMessage = "El estado es requerido.")]
-        [StringLength(20, ErrorMessage = "El estado no puede exceder los 20 caracteres.")]
+        [Required(ErrorMessage = "El estado es obligatorio")]
+        [StringLength(50)]
         public string Estado { get; set; }
 
-        [Required(ErrorMessage = "El paciente es requerido.")]
-        [ForeignKey("Paciente")]
+        [Required(ErrorMessage = "El paciente es obligatorio")]
         public int PacienteId { get; set; }
-        public Paciente Paciente { get; set; } // Propiedad de navegación
+        public virtual Paciente? Paciente { get; set; }
 
-        [Required(ErrorMessage = "El odontólogo es requerido.")]
-        [ForeignKey("Odontologo")]
+        [Required(ErrorMessage = "El odontólogo es obligatorio")]
         public int OdontologoId { get; set; }
-        public Odontologo Odontologo { get; set; } // Propiedad de navegación
+        public virtual Odontologo? Odontologo { get; set; }
     }
 }
