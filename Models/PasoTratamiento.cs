@@ -1,16 +1,23 @@
-﻿using DentAssist.Models;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-public class PasoTratamiento
+namespace DentAssist.Models
 {
-    public int Id { get; set; }
-    public int PlanTratamientoId { get; set; }
-    public PlanTratamiento PlanTratamiento { get; set; }
-    public int TratamientoId { get; set; }
-    public Tratamiento Tratamiento { get; set; }
-    public DateTime FechaEstimada { get; set; }
-
-    public string Estado { get; set; }  // Pendiente, En Progreso, Completado
-
-    public string Observaciones { get; set; }
+    public class PasoTratamiento
+    {
+        public int Id { get; set; }
+        [Required]
+        public int PlanTratamientoId { get; set; }
+        public PlanTratamiento PlanTratamiento { get; set; }
+        [Required]
+        public int TratamientoId { get; set; }
+        public Tratamiento Tratamiento { get; set; }
+        [Required]
+        public DateTime FechaEstimada { get; set; }
+        [Required]
+        [StringLength(20)]
+        public string Estado { get; set; } // Ej: "Pendiente", "EnProgreso", "Completado"
+        [StringLength(500)]
+        public string Observaciones { get; set; }
+    }
 }
