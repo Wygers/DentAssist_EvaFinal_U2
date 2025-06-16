@@ -23,9 +23,7 @@ namespace DentAssist.Controllers
         {
             var planes = _context.PlanesTratamiento
                 .Include(p => p.Paciente)
-                .Include(p => p.Odontologo)
-                .Include(p => p.Pasos)
-                .ThenInclude(p => p.Tratamiento);
+                .Include(p => p.Odontologo);
             return View(await planes.ToListAsync());
         }
 
@@ -37,8 +35,6 @@ namespace DentAssist.Controllers
             var plan = await _context.PlanesTratamiento
                 .Include(p => p.Paciente)
                 .Include(p => p.Odontologo)
-                .Include(p => p.Pasos)
-                .ThenInclude(p => p.Tratamiento)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (plan == null) return NotFound();
@@ -51,9 +47,6 @@ namespace DentAssist.Controllers
         {
             ViewData["PacienteId"] = new SelectList(_context.Pacientes, "Id", "NombreCompleto");
             ViewData["OdontologoId"] = new SelectList(_context.Odontologos, "Id", "Especialidad");
-            ViewBag.Tratamientos = _context.Tratamientos
-                .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.Nombre })
-                .ToList();
             return View();
         }
 
@@ -64,12 +57,6 @@ namespace DentAssist.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Carga relaciones (opcional si no vienen desde el formulario)
-                foreach (var paso in planTratamiento.Pasos)
-                {
-                    _context.Entry(paso).State = EntityState.Added;
-                }
-
                 _context.Add(planTratamiento);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -77,9 +64,6 @@ namespace DentAssist.Controllers
 
             ViewData["PacienteId"] = new SelectList(_context.Pacientes, "Id", "NombreCompleto", planTratamiento.PacienteId);
             ViewData["OdontologoId"] = new SelectList(_context.Odontologos, "Id", "Especialidad", planTratamiento.OdontologoId);
-            ViewBag.Tratamientos = _context.Tratamientos
-                .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.Nombre })
-                .ToList();
             return View(planTratamiento);
         }
 
@@ -88,17 +72,11 @@ namespace DentAssist.Controllers
         {
             if (id == null) return NotFound();
 
-            var plan = await _context.PlanesTratamiento
-                .Include(p => p.Pasos)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
+            var plan = await _context.PlanesTratamiento.FindAsync(id);
             if (plan == null) return NotFound();
 
             ViewData["PacienteId"] = new SelectList(_context.Pacientes, "Id", "NombreCompleto", plan.PacienteId);
             ViewData["OdontologoId"] = new SelectList(_context.Odontologos, "Id", "Especialidad", plan.OdontologoId);
-            ViewBag.Tratamientos = _context.Tratamientos
-                .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.Nombre })
-                .ToList();
             return View(plan);
         }
 
@@ -113,17 +91,6 @@ namespace DentAssist.Controllers
             {
                 try
                 {
-                    // Elimina pasos existentes y reemplaza por los nuevos
-                    var pasosExistentes = _context.PasosTratamiento.Where(p => p.PlanTratamientoId == id);
-                    _context.PasosTratamiento.RemoveRange(pasosExistentes);
-                    await _context.SaveChangesAsync();
-
-                    foreach (var paso in planTratamiento.Pasos)
-                    {
-                        paso.PlanTratamientoId = id;
-                        _context.PasosTratamiento.Add(paso);
-                    }
-
                     _context.Update(planTratamiento);
                     await _context.SaveChangesAsync();
                 }
@@ -139,9 +106,6 @@ namespace DentAssist.Controllers
 
             ViewData["PacienteId"] = new SelectList(_context.Pacientes, "Id", "NombreCompleto", planTratamiento.PacienteId);
             ViewData["OdontologoId"] = new SelectList(_context.Odontologos, "Id", "Especialidad", planTratamiento.OdontologoId);
-            ViewBag.Tratamientos = _context.Tratamientos
-                .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.Nombre })
-                .ToList();
             return View(planTratamiento);
         }
 
@@ -165,13 +129,9 @@ namespace DentAssist.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var plan = await _context.PlanesTratamiento
-                .Include(p => p.Pasos)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
+            var plan = await _context.PlanesTratamiento.FindAsync(id);
             if (plan != null)
             {
-                _context.PasosTratamiento.RemoveRange(plan.Pasos);
                 _context.PlanesTratamiento.Remove(plan);
                 await _context.SaveChangesAsync();
             }

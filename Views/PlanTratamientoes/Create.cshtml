@@ -5,7 +5,7 @@
     var tratamientosJson = Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.Tratamientos);
 }
 
-<h1>Crear Plan de Tratamiento</h1>
+<h5>Crear Plan de Tratamiento</h5>
 <hr />
 
 <form asp-action="Create" method="post">
@@ -93,7 +93,6 @@
             pasoIndex++;
         }
     </script>
-
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
